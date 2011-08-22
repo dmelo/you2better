@@ -1,3 +1,0 @@
-RewriteRule ^/(.*?)$ /index.php
-RewriteCond %{REQUEST_URI} ^/api/.*/.*.mp3
-RewriteRule ^/api/(.*?)/(.*?)\.mp3$ /index.php?youtubeid=$1&filename=$2
