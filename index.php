@@ -4,6 +4,13 @@ include_once 'conf.php';
 
 $youtubeId = $_GET['youtubeid'];
 
+/**
+ * writeTimestamp Write the timestamp on the meta file.
+ *
+ * @param mixed $filename
+ * @access public
+ * @return void
+ */
 function writeTimestamp($filename)
 {
     $fd = fopen($filename, 'w');
@@ -11,8 +18,16 @@ function writeTimestamp($filename)
     fclose($fd);
 }
 
+/**
+ * logFile Log debug information.
+ *
+ * @param mixed $str
+ * @access public
+ * @return void
+ */
 function logFile($str)
 {
+    global $youtubeId;
     $fd = fopen(DIRECTORY . '/log-' . $youtubeId, 'a');
     fwrite($fd, $str. PHP_EOL);
     fclose($fd);
