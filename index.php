@@ -34,7 +34,9 @@ function logFile($str)
 }
 
 logFile('start');
+header("Accept-Ranges: bytes\n");
 header("Content-Type: audio/mpeg\n");
+
 
 $filename = DIRECTORY . '/' . $youtubeId . '.mp3';
 $filelock = $filename . '-lock';
