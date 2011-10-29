@@ -36,6 +36,8 @@ function logFile($str)
 logFile('start');
 header("Accept-Ranges: bytes\n");
 header("Content-Type: audio/mpeg\n");
+header("Keep-Alive: timeout=15, max=100");
+header("Connection: Keep-Alive");
 
 
 $filename = DIRECTORY . '/' . $youtubeId . '.mp3';
@@ -51,6 +53,8 @@ if (file_exists($filename)) {
         echo file_get_contents($filename);
     } else {
         logFile('here 2');
+        if(array_key_exists('duration', $_GET))
+            header('Content-Length: ' . ( 7900 * $_GET['duration'] ) );
         $offset = 0;
         $last = 0;
         while(0 === $last) {
@@ -70,6 +74,8 @@ if (file_exists($filename)) {
 } else {
     logFile('here 1');
     // Here is where all the magic happens.
+    if(array_key_exists('duration', $_GET))
+        header('Content-Length: ' . ( 7900 * $_GET['duration'] ) );
     $ydl = './youtube-dl/youtube-dl --no-part -q';
     $ysite = 'http://www.youtube.com/watch';
     system("touch ${filelock}; ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | ffmpeg -i - -f mp3 pipe:1 | tee ${filename}; rm ${filelock}");
