@@ -4,6 +4,7 @@ include_once 'conf.php';
 
 $youtubeId = $_GET['youtubeid'];
 
+
 /**
  * writeTimestamp Write the timestamp on the meta file.
  *
@@ -35,7 +36,7 @@ function logFile($str)
 
 logFile('start');
 header("Accept-Ranges: bytes\n");
-header("Content-Type: audio/mpeg\n");
+header("Content-Type: application/mpeg\n");
 header("Keep-Alive: timeout=15, max=100\n");
 header("Connection: Keep-Alive\n");
 header("Content-Transfer-Encoding: binary\n");
