@@ -36,7 +36,7 @@ function logFile($str)
 
 logFile('start');
 header("Accept-Ranges: bytes\n");
-header("Content-Type: audio/mpeg\n");
+header("Content-Type: application/mpeg\n");
 header("Keep-Alive: timeout=15, max=100");
 header("Connection: Keep-Alive");
 
