@@ -36,8 +36,10 @@ function logFile($str)
 logFile('start');
 header("Accept-Ranges: bytes\n");
 header("Content-Type: audio/mpeg\n");
-header("Keep-Alive: timeout=15, max=100");
-header("Connection: Keep-Alive");
+header("Keep-Alive: timeout=15, max=100\n");
+header("Connection: Keep-Alive\n");
+header("Content-Transfer-Encoding: binary\n");
+header_remove("Transfer-Encoding");
 
 
 $filename = DIRECTORY . '/' . $youtubeId . '.mp3';
