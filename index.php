@@ -81,5 +81,5 @@ if (file_exists($filename)) {
         header('Content-Length: ' . ( 7900 * $_GET['duration'] ) );
     $ydl = './youtube-dl/youtube-dl --no-part -q';
     $ysite = 'http://www.youtube.com/watch';
-    system("touch ${filelock}; ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | ffmpeg -i - -f mp3 pipe:1 | tee ${filename}; rm ${filelock}");
+    system("touch ${filelock}; ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | tee ${filename}; rm ${filelock}");
 }
