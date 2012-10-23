@@ -3,6 +3,12 @@
 include_once 'conf.php';
 
 $youtubeId = $_GET['youtubeid'];
+$ext = $_GET['ext'];
+if ('mp3' === $ext) {
+    $contentType = "application/mpeg";
+} elseif ('flv' === $ext) {
+    $contentType = "video/x-flv";
+}
 
 
 /**
@@ -36,16 +42,16 @@ function logFile($str)
 
 logFile('start');
 header("Accept-Ranges: bytes\n");
-header("Content-Type: application/mpeg\n");
+header("Content-Type: " . $contentType . "\n");
 header("Keep-Alive: timeout=15, max=100\n");
 header("Connection: Keep-Alive\n");
 header("Content-Transfer-Encoding: binary\n");
 header_remove("Transfer-Encoding");
 
 
-$filename = DIRECTORY . '/' . $youtubeId . '.mp3';
+$filename = DIRECTORY . '/' . $youtubeId . '.' . $ext;
 $filelock = $filename . '-lock';
-$metaFilename = DIRECTORY . '/internal--' . $youtubeId . '.mp3';
+$metaFilename = DIRECTORY . '/internal--' . $youtubeId . '.' . $ext;
 
 
 writeTimestamp($metaFilename);
@@ -81,5 +87,11 @@ if (file_exists($filename)) {
         header('Content-Length: ' . ( 7900 * $_GET['duration'] ) );
     $ydl = './youtube-dl/youtube-dl --no-part -q';
     $ysite = 'http://www.youtube.com/watch';
-    system("nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}");
+    if ($ext === 'mp3') {
+        $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
+    } elseif ($ext === 'flv') {
+        $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
+    }
+    logFile('cmd: ' . $cmd);
+    system($cmd);
 }
