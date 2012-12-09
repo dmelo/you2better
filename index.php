@@ -8,6 +8,8 @@ if ('mp3' === $ext) {
     $contentType = "application/mpeg";
 } elseif ('flv' === $ext) {
     $contentType = "video/x-flv";
+} elseif ('3gp' === $ext) {
+    $contentType = "video/3gpp";
 }
 
 
@@ -115,6 +117,8 @@ if (file_exists($filename)) {
         $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === 'flv') {
         $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
+    } elseif ($ext === '3gp') {
+        $cmd = "nice touch ${filelock}; cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
     }
     logFile('cmd: ' . $cmd);
     system($cmd);
