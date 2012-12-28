@@ -64,6 +64,7 @@ header_remove("Transfer-Encoding");
 $filename = DIRECTORY . '/' . $youtubeId . '.' . $ext;
 $filelock = $filename . '-lock';
 $metaFilename = DIRECTORY . '/internal--' . $youtubeId . '.' . $ext;
+$fileAccess = "${filename}.access";
 
 
 writeTimestamp($metaFilename);
@@ -71,19 +72,20 @@ logFile("Beginning with file $filename");
 if (file_exists($filename)) {
     logFile("File $filename exists");
     if (!file_exists($filelock)) {
-	logFile("lock file $filelock doesn't exists");
+        logFile("lock file $filelock doesn't exists");
         header('Content-Length: ' . filesize($filename));
-	logFile("file header Content-Length set to " . filesize($filename));
-	echoFile($filename);
+        logFile("file header Content-Length set to " . filesize($filename));
+        echoFile($filename);
     } else {
         logFile("Lock file $filelock exists");
         if(array_key_exists('duration', $_GET)) {
-	    $estimatedLength = 7900 * $_GET['duration'];
-            header('Content-Length: ' . $estimatedLength );
-	    logFile("Estimating Content-Length to $estimatedLength");
-	} else  {
-	    logFile("Content-Length was not set");
-	}
+            $estimatedLength = 7900 * $_GET['duration'];
+                header('Content-Length: ' . $estimatedLength );
+            logFile("Estimating Content-Length to $estimatedLength");
+        } else  {
+            logFile("Content-Length was not set");
+        }
+
         $offset = 0;
         $last = 0;
         while(0 === $last) {
@@ -113,15 +115,19 @@ if (file_exists($filename)) {
 
     $ydl = './youtube-dl/youtube-dl --no-part -q';
     $ysite = 'http://www.youtube.com/watch';
+    $cmd = "nice touch -- \"${filelock}\"; ";
     if ($ext === 'mp3') {
-        $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === 'flv') {
-        $cmd = "nice touch ${filelock}; nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === '3gp') {
-        $cmd = "nice touch ${filelock}; cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
     }
     logFile('cmd: ' . $cmd);
     system($cmd);
 }
+
+logFile("touch -- \"$fileAccess\"");
+system("touch ${fileAccess}");
 
 logFile("End of process on file $filename" . PHP_EOL . PHP_EOL);
