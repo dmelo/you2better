@@ -22,9 +22,10 @@ if ('mp3' === $ext) {
  */
 function writeTimestamp($filename)
 {
-    $fd = fopen($filename, 'w');
-    fprintf($fd, "%d", time());
-    fclose($fd);
+    if (($fd = fopen($filename, 'w')) !== false) {
+        fprintf($fd, "%d", time());
+        fclose($fd);
+    }
 }
 
 /**
@@ -45,12 +46,12 @@ function logFile($str)
 
 function echoFile($filename)
 {
-    $fd = fopen($filename, "r");
-    while (!feof($fd)) {
-	echo fread($fd, 1024 * 1024);
+    if (($fd = fopen($filename, "r")) !== false) {
+        while (!feof($fd)) {
+            echo fread($fd, 1024 * 1024);
+        }
+        fclose($fd);
     }
-
-    fclose($fd);
 }
 
 logFile('start');
