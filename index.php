@@ -37,9 +37,10 @@ function writeTimestamp($filename)
 function logFile($str)
 {
     global $youtubeId;
-    $fd = fopen(DIRECTORY . '/log-' . $youtubeId, 'a');
-    fwrite($fd, date('Y-m-d H:i:s', time()) . ' -- ' . $str. PHP_EOL);
-    fclose($fd);
+    if (($fd = fopen(DIRECTORY . '/log-' . $youtubeId, 'a')) !== false) {
+        fwrite($fd, date('Y-m-d H:i:s', time()) . ' -- ' . $str. PHP_EOL);
+        fclose($fd);
+    }
 }
 
 function echoFile($filename)
@@ -106,11 +107,11 @@ if (file_exists($filename)) {
     logFile("File $filename doesn't exists");
     // Here is where all the magic happens.
     if(array_key_exists('duration', $_GET)) {
-	$estimatedLength = 7900 * $_GET['duration'];
+        $estimatedLength = 7900 * $_GET['duration'];
         header('Content-Length: ' . $estimatedLength );
-	logFile("Estimating header Content-Length to $estimatedLength");
+        logFile("Estimating header Content-Length to $estimatedLength");
     } else {
-	logFile("Content-Length was not set");
+        logFile("Content-Length was not set");
     }
 
     $ydl = './youtube-dl/youtube-dl --no-part -q';
