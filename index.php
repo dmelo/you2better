@@ -6,27 +6,14 @@ $youtubeId = $_GET['youtubeid'];
 $ext = $_GET['ext'];
 if ('mp3' === $ext) {
     $contentType = "application/mpeg";
+} elseif ('mp4' === $ext) {
+    $contentType = 'video/mp4';
 } elseif ('flv' === $ext) {
     $contentType = "video/x-flv";
 } elseif ('3gp' === $ext) {
     $contentType = "video/3gpp";
 }
 
-
-/**
- * writeTimestamp Write the timestamp on the meta file.
- *
- * @param mixed $filename
- * @access public
- * @return void
- */
-function writeTimestamp($filename)
-{
-    if (($fd = fopen($filename, 'w')) !== false) {
-        fprintf($fd, "%d", time());
-        fclose($fd);
-    }
-}
 
 /**
  * logFile Log debug information.
@@ -65,11 +52,8 @@ header_remove("Transfer-Encoding");
 
 $filename = DIRECTORY . '/' . $youtubeId . '.' . $ext;
 $filelock = $filename . '-lock';
-$metaFilename = DIRECTORY . '/internal--' . $youtubeId . '.' . $ext;
-$fileAccess = "${filename}.access";
 
 
-writeTimestamp($metaFilename);
 logFile("Beginning with file $filename");
 if (file_exists($filename)) {
     logFile("File $filename exists");
@@ -124,12 +108,12 @@ if (file_exists($filename)) {
         $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === '3gp') {
         $cmd .= "cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
+    } elseif ($ext === 'mp4' || $ext === 'm4v') {
+        // $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp4 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
     }
     logFile('cmd: ' . $cmd);
     system($cmd);
 }
-
-logFile("touch -- \"$fileAccess\"");
-system("touch ${fileAccess}");
 
 logFile("End of process on file $filename" . PHP_EOL . PHP_EOL);
