@@ -3,6 +3,21 @@
     "description": "Provides a way to download youtube media as mp3 or m4v files.",
     "type": "application",
     "require": {
-        "php": ">=5.3.0"
-    }
+        "php": ">=5.3.0",
+        "rg3/youtube-dl": "dev-master"
+    },
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "rg3/youtube-dl",
+                "version": "dev-master",
+                "source": {
+                    "url": "https://github.com/rg3/youtube-dl.git",
+                    "type": "git",
+                    "reference": "origin/master"
+                }
+            }
+        }
+    ]
 }
