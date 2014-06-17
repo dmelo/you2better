@@ -1,2 +1,4 @@
 *.swp
 tmp/cache/*
+composer.lock
+vendor/
