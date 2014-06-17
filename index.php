@@ -99,7 +99,7 @@ if (file_exists($filename)) {
         logFile("Content-Length was not set");
     }
 
-    $ydl = './youtube-dl/youtube-dl --no-part -q';
+    $ydl = './vendor/rg3/youtube-dl/youtube-dl --no-part -q';
     $ysite = 'http://www.youtube.com/watch';
     $cmd = "nice touch -- \"${filelock}\"; ";
     if ($ext === 'mp3') {
