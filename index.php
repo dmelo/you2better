@@ -52,6 +52,8 @@ header_remove("Transfer-Encoding");
 
 $filename = DIRECTORY . '/' . $youtubeId . '.' . $ext;
 $filelock = $filename . '-lock';
+$ysite = 'http://www.youtube.com/watch';
+$ydl = '../../rg3/youtube-dl/youtube-dl';
 
 
 logFile("Beginning with file $filename");
@@ -65,9 +67,12 @@ if (file_exists($filename)) {
     } else {
         logFile("Lock file $filelock exists");
         if(array_key_exists('duration', $_GET)) {
-            $estimatedLength = 7900 * $_GET['duration'];
-                header('Content-Length: ' . $estimatedLength );
-            logFile("Estimating Content-Length to $estimatedLength");
+            $cmd = "/usr/bin/curl -I \"`$ydl -g '${ysite}?v={$youtubeId}'`\" 2> /dev/null | grep -i \"Content-Length\" | sed 's/.* //g'";
+            exec($cmd, $output, $ret);
+            $estimatedLength = $output[0];
+            header('Content-Length: ' . $estimatedLength );
+            logFile("Estimating header Content-Length to $estimatedLength");
+
         } else  {
             logFile("Content-Length was not set");
         }
@@ -92,25 +97,26 @@ if (file_exists($filename)) {
     logFile("File $filename doesn't exists");
     // Here is where all the magic happens.
     if(array_key_exists('duration', $_GET)) {
-        $estimatedLength = 7900 * $_GET['duration'];
+        $cmd = "/usr/bin/curl -I \"`$ydl -g '${ysite}?v={$youtubeId}'`\" 2> /dev/null | grep -i \"Content-Length\" | sed 's/.* //g'";
+        logFile("command.. $cmd");
+        exec($cmd, $output, $ret);
+        $estimatedLength = $output[0];
         header('Content-Length: ' . $estimatedLength );
         logFile("Estimating header Content-Length to $estimatedLength");
     } else {
         logFile("Content-Length was not set");
     }
 
-    $ydl = '../../rg3/youtube-dl/youtube-dl --no-part -q';
-    $ysite = 'http://www.youtube.com/watch';
     $cmd = "nice touch -- \"${filelock}\"; ";
     if ($ext === 'mp3') {
-        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --no-part -q --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === 'flv') {
-        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --no-part -q --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === '3gp') {
         $cmd .= "cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
     } elseif ($ext === 'mp4' || $ext === 'm4v') {
-        // $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp4 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
-        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
+        // $cmd .= "nice ${ydl} --no-part -q --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp4 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
+        $cmd .= "nice ${ydl} --no-part -q --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
     }
     logFile('cmd: ' . $cmd);
     system($cmd);
