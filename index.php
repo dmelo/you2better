@@ -1,6 +1,6 @@
 <?php
 
-include_once 'conf.php';
+$conf = include('conf.php');
 
 $youtubeId = $_GET['youtubeid'];
 $ext = $_GET['ext'];
@@ -15,7 +15,11 @@ if ('mp3' === $ext) {
 }
 
 $ysite = 'http://www.youtube.com/watch';
-$ydl = '../../rg3/youtube-dl/youtube-dl';
+$ydl = $conf['ydl'];
 exec("$ydl -g \"{$ysite}?v={$youtubeId}\"", $output, $ret);
 
-header('Location: ' . $output[0]);
+if (0 != $ret) {
+    header("HTTP/1.0 404 Not Found");
+} else {
+    header('Location: ' . $output[0]);
+}
