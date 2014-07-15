@@ -6,7 +6,7 @@ $youtubeId = $_GET['youtubeid'];
 $ext = $_GET['ext'];
 if ('mp3' === $ext) {
     $contentType = "application/mpeg";
-} elseif ('mp4' === $ext) {
+} elseif ('mp4' === $ext || 'm4v' === $ext) {
     $contentType = 'video/mp4';
 } elseif ('flv' === $ext) {
     $contentType = "video/x-flv";
@@ -16,9 +16,10 @@ if ('mp3' === $ext) {
 
 $ysite = 'http://www.youtube.com/watch';
 $ydl = $conf['ydl'];
-$cacheFilename = realpath(__DIR__ . '/cache/' . $youtubeId);
-$cacheFilenameHeader = "$cacheFilename.$ext.header";
-$cacheFilenameContent = "$cacheFilename.$ext.content";
+
+$cacheFilename = realpath(__DIR__ . '/cache/');
+$cacheFilenameHeader = "$cacheFilename/$youtubeId.$ext.header";
+$cacheFilenameContent = "$cacheFilename/$youtubeId.$ext.content";
 
 $isHeader = true;
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent)) {
