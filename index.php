@@ -2,6 +2,34 @@
 
 $conf = include('conf.php');
 
+function checkFileSize($cacheFilenameHeader, $cacheFilenameContent)
+{
+    $ret = false;
+    if (($fd = fopen($cacheFilenameHeader, 'r')) !== false) {
+        while(!feof($fd)) {
+            $str = fgets($fd, 4096);
+            if (preg_match('/Content-Length/i', $str)) {
+                if (($str = preg_replace('/.* *:/', '',$str)) !== null) {
+                    $size = (int) $str;
+                    if ($size === filesize($cacheFilenameContent)) {
+                        $ret = true;
+                    }
+                    error_log("file: $cacheFilenameContent. header size: $size. actual size: " . filesize($cacheFilenameContent));
+                } else {
+                    error_log("file: $cacheFilenameContent. Couldn't isolate file size on header file");
+                }
+                break;
+            }
+        }
+
+        fclose($fd);
+    } else {
+        error_log("could not open header file $cacheFilenameHeader.");
+    }
+
+    return $ret;
+}
+
 $youtubeId = $_GET['youtubeid'];
 $ext = $_GET['ext'];
 if ('mp3' === $ext) {
@@ -21,18 +49,14 @@ $cacheFilename = realpath(__DIR__ . '/cache/');
 $cacheFilenameHeader = "$cacheFilename/$youtubeId.$ext.header";
 $cacheFilenameContent = "$cacheFilename/$youtubeId.$ext.content";
 
-$isHeader = true;
-if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent)) {
+if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
     $fd = fopen($cacheFilenameHeader, 'r');
     while (!feof($fd)) {
         header(fgets($fd, 4096));
     }
 
     fclose($fd);
-    $fd = fopen($cacheFilenameContent, 'r');
-    while (!feof($fd)) {
-        echo fgets($fd, 4096);
-    }
+    echo file_get_contents($cacheFilenameContent);
 } else {
     exec("$ydl -g \"{$ysite}?v={$youtubeId}\"", $output, $ret);
     if (0 != $ret) {
