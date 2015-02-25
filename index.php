@@ -69,7 +69,10 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
         $fp = fsockopen($host, 443);
         if ($fp) {
             stream_set_timeout($fp, 10);
-            fwrite($fp, "GET $uri HTTP/1.1" . PHP_EOL . PHP_EOL);
+            $out = "GET $uri HTTP/1.1\r\n";
+            $out .= "Host: " . $url['host'] . "\r\n";
+            $out .= "Connection: Close\r\n\r\n";
+            fwrite($fp, $out);
             
             $isHeader = true;
             $fd = fopen($cacheFilenameHeader, 'w');
