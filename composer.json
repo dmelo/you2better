@@ -1,0 +1,8 @@
+{
+    "name": "dmelo/you2better",
+    "description": "Provides a way to download youtube media as mp3 or m4v files.",
+    "type": "application",
+    "require": {
+        "php": ">=5.3.0"
+    }
+}

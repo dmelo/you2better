@@ -1,135 +1,98 @@
 <?php
 
-include_once 'conf.php';
+$conf = include('conf.php');
+
+function checkFileSize($cacheFilenameHeader, $cacheFilenameContent)
+{
+    $ret = false;
+    if (($fd = fopen($cacheFilenameHeader, 'r')) !== false) {
+        while(!feof($fd)) {
+            $str = fgets($fd, 4096);
+            if (preg_match('/Content-Length/i', $str)) {
+                if (($str = preg_replace('/.* *:/', '',$str)) !== null) {
+                    $size = (int) $str;
+                    if ($size === filesize($cacheFilenameContent)) {
+                        $ret = true;
+                    }
+                    error_log("file: $cacheFilenameContent. header size: $size. actual size: " . filesize($cacheFilenameContent));
+                } else {
+                    error_log("file: $cacheFilenameContent. Couldn't isolate file size on header file");
+                }
+                break;
+            }
+        }
+
+        fclose($fd);
+    } else {
+        error_log("could not open header file $cacheFilenameHeader.");
+    }
+
+    return $ret;
+}
 
 $youtubeId = $_GET['youtubeid'];
 $ext = $_GET['ext'];
 if ('mp3' === $ext) {
     $contentType = "application/mpeg";
+} elseif ('mp4' === $ext || 'm4v' === $ext) {
+    $contentType = 'video/mp4';
 } elseif ('flv' === $ext) {
     $contentType = "video/x-flv";
 } elseif ('3gp' === $ext) {
     $contentType = "video/3gpp";
 }
 
+$ysite = 'http://www.youtube.com/watch';
+$ydl = $conf['ydl'];
 
-/**
- * writeTimestamp Write the timestamp on the meta file.
- *
- * @param mixed $filename
- * @access public
- * @return void
- */
-function writeTimestamp($filename)
-{
-    if (($fd = fopen($filename, 'w')) !== false) {
-        fprintf($fd, "%d", time());
-        fclose($fd);
+$cacheFilename = realpath(__DIR__ . '/cache/');
+$cacheFilenameHeader = "$cacheFilename/$youtubeId.$ext.header";
+$cacheFilenameContent = "$cacheFilename/$youtubeId.$ext.content";
+
+if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
+    $fd = fopen($cacheFilenameHeader, 'r');
+    while (!feof($fd)) {
+        header(fgets($fd, 4096));
     }
-}
 
-/**
- * logFile Log debug information.
- *
- * @param mixed $str
- * @access public
- * @return void
- */
-function logFile($str)
-{
-    global $youtubeId;
-    if (($fd = fopen(DIRECTORY . '/log-' . $youtubeId, 'a')) !== false) {
-        fwrite($fd, date('Y-m-d H:i:s', time()) . ' -- ' . $str. PHP_EOL);
-        fclose($fd);
-    }
-}
-
-function echoFile($filename)
-{
-    if (($fd = fopen($filename, "r")) !== false) {
-        while (!feof($fd)) {
-            echo fread($fd, 1024 * 1024);
-        }
-        fclose($fd);
-    }
-}
-
-logFile('start');
-header("Accept-Ranges: bytes\n");
-header("Content-Type: " . $contentType . "\n");
-header("Keep-Alive: timeout=15, max=100\n");
-header("Connection: Keep-Alive\n");
-header("Content-Transfer-Encoding: binary\n");
-header_remove("Transfer-Encoding");
-
-
-$filename = DIRECTORY . '/' . $youtubeId . '.' . $ext;
-$filelock = $filename . '-lock';
-$metaFilename = DIRECTORY . '/internal--' . $youtubeId . '.' . $ext;
-$fileAccess = "${filename}.access";
-
-
-writeTimestamp($metaFilename);
-logFile("Beginning with file $filename");
-if (file_exists($filename)) {
-    logFile("File $filename exists");
-    if (!file_exists($filelock)) {
-        logFile("lock file $filelock doesn't exists");
-        header('Content-Length: ' . filesize($filename));
-        logFile("file header Content-Length set to " . filesize($filename));
-        echoFile($filename);
-    } else {
-        logFile("Lock file $filelock exists");
-        if(array_key_exists('duration', $_GET)) {
-            $estimatedLength = 7900 * $_GET['duration'];
-                header('Content-Length: ' . $estimatedLength );
-            logFile("Estimating Content-Length to $estimatedLength");
-        } else  {
-            logFile("Content-Length was not set");
-        }
-
-        $offset = 0;
-        $last = 0;
-        while(0 === $last) {
-            clearstatcache();
-            if (!file_exists($filelock))
-                $last = 1;
-            $fd = fopen($filename, 'rb');
-            $size = filesize($filename);
-            fseek($fd, $offset, SEEK_SET);
-            logFile("filename: ${filename}. last: ${last}. offset: ${offset}. size: ${size}");
-            echo fread($fd, $size - $offset);
-            $offset = $size;
-            fclose($fd);
-            sleep(1);
-        }
-    }
+    fclose($fd);
+    echo file_get_contents($cacheFilenameContent);
 } else {
-    logFile("File $filename doesn't exists");
-    // Here is where all the magic happens.
-    if(array_key_exists('duration', $_GET)) {
-        $estimatedLength = 7900 * $_GET['duration'];
-        header('Content-Length: ' . $estimatedLength );
-        logFile("Estimating header Content-Length to $estimatedLength");
+    exec("$ydl -g \"{$ysite}?v={$youtubeId}\"", $output, $ret);
+    if (0 != $ret) {
+        header("HTTP/1.0 404 Not Found");
     } else {
-        logFile("Content-Length was not set");
-    }
+        $url = parse_url($output[0]);
+        $host = 'ssl://' . $url['host'];
+        $uri = $url['path'] . '?' . $url['query'];
 
-    $ydl = './youtube-dl/youtube-dl --no-part -q';
-    $ysite = 'http://www.youtube.com/watch';
-    $cmd = "nice touch -- \"${filelock}\"; ";
-    if ($ext === 'mp3') {
-        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice -n 18 ffmpeg -i - -f mp3 pipe:1 | nice tee ${filename}; nice rm ${filelock}";
-    } elseif ($ext === 'flv') {
-        $cmd .= "nice ${ydl} --output=/dev/stdout \"${ysite}?v={$youtubeId}\" | nice tee ${filename}; nice rm ${filelock}";
-    } elseif ($ext === '3gp') {
-        $cmd .= "cvlc  --sout file/3gp:- \"`wget -O - 'https://gdata.youtube.com/feeds/api/videos/{$youtubeId}' | grep 3gp | sed 's/.*rtsp/rtsp/g' | sed 's/\.3gp.*$/.3gp/g'`\" | nice tee ${filename}; nice rm ${filelock}";
+        $fp = fsockopen($host, 443);
+        if ($fp) {
+            stream_set_timeout($fp, 10);
+            $out = "GET $uri HTTP/1.1\r\n";
+            $out .= "Host: " . $url['host'] . "\r\n";
+            $out .= "Connection: Close\r\n\r\n";
+            fwrite($fp, $out);
+            
+            $isHeader = true;
+            $fd = fopen($cacheFilenameHeader, 'w');
+            while(!feof($fp)) {
+                $str = fgets($fp, 4096);
+                if ($isHeader && "\r\n" == $str) {
+                    $isHeader = false;
+                    fclose($fd);
+                    $fd = fopen($cacheFilenameContent, 'w');
+                } else {
+                    if ($isHeader) {
+                        header($str);
+                    } else {
+                        echo $str;
+                    }
+                    fwrite($fd, $str);
+                }
+            }
+            fclose($fd);
+            fclose($fp);
+        }
     }
-    logFile('cmd: ' . $cmd);
-    system($cmd);
 }
-
-logFile("touch -- \"$fileAccess\"");
-system("touch ${fileAccess}");
-
-logFile("End of process on file $filename" . PHP_EOL . PHP_EOL);

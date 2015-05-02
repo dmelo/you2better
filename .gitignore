@@ -1,2 +1,7 @@
 *.swp
 tmp/cache/*
+composer.lock
+conf.php
+vendor/
+cache/*
+!cache/README
