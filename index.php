@@ -10,7 +10,7 @@ use Monolog\Processor\ProcessIdProcessor;
 ignore_user_abort(true);
 $conf = include('conf.php');
 $logger = new Logger('default');
-$logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/log/you2better.log', 0, Logger::INFO));
+$logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/you2better.log', 0, Logger::INFO));
 $logger->pushProcessor(new ProcessIdProcessor);
 
 $logger->addInfo("Start");
