@@ -4,4 +4,5 @@ composer.lock
 conf.php
 vendor/
 cache/*
+log/
 !cache/README
