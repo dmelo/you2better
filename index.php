@@ -40,6 +40,8 @@ if ('mp3' === $ext) {
     $contentType = "video/x-flv";
 } elseif ('3gp' === $ext) {
     $contentType = "video/3gpp";
+} elseif ('m4a' === $ext) {
+    $contentType = 'audio/mp4';
 }
 
 $ysite = 'http://www.youtube.com/watch';
@@ -58,7 +60,7 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
     fclose($fd);
     echo file_get_contents($cacheFilenameContent);
 } else {
-    exec("$ydl -g \"{$ysite}?v={$youtubeId}\"", $output, $ret);
+    exec("$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpFile} ; cat {$tmpFile} | grep \"audio/mp4\" || cat {$tmpFile}", $output, $ret);
     if (0 != $ret) {
         header("HTTP/1.0 404 Not Found");
     } else {

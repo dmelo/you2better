@@ -3,6 +3,7 @@
     "description": "Provides a way to download youtube media as mp3 or m4v files.",
     "type": "application",
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.3.0",
+        "monolog/monolog": ">=1.13.1"
     }
 }
