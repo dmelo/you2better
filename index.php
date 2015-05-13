@@ -1,6 +1,10 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../'); // as a composer component
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../'); // inside /public/api
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../'); // inside /public
+
+include_once 'vendor/autoload.php';
 
 use Monolog\Logger;
 use Monolog\Handler\RotatingFileHandler;
