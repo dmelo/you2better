@@ -4,6 +4,8 @@ set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../'); 
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../'); // inside /public/api
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../'); // inside /public
 
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../application/configs/'); // as a composer component
+
 include_once 'vendor/autoload.php';
 
 use Monolog\Logger;
@@ -12,7 +14,7 @@ use Monolog\Processor\ProcessIdProcessor;
 
 
 ignore_user_abort(true);
-$conf = include('conf.php');
+$conf = include('you2better-conf.php');
 $logger = new Logger('default');
 $logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/you2better.log', 0, Logger::INFO));
 $logger->pushProcessor(new ProcessIdProcessor);
