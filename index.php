@@ -71,6 +71,64 @@ $cacheFilenameHeader = "$filenameBase.header";
 $cacheFilenameContent = "$filenameBase.content";
 $cacheFilenamePID = "$filenameBase.pid";
 
+function saveUrl($url)
+{
+    global $logger, $youtubeId, $cacheFilenameHeader, $cacheFilenameContent;
+    $url = parse_url($url);
+    $host = 'ssl://' . $url['host'];
+    $uri = $url['path'] . '?' . $url['query'];
+    $logger->addInfo("Open connection with $host on port 443");
+
+    $fp = fsockopen($host, 443);
+    if ($fp) {
+        socket_set_option($fp, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
+        socket_set_option($fp, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 10, 'usec' => 0));
+        $out = "GET $uri HTTP/1.1\r\n";
+        $out .= "Host: " . $url['host'] . "\r\n";
+        $out .= "Connection: Close\r\n\r\n";
+        $logger->addInfo("send header: $out");
+        fwrite($fp, $out);
+        
+        $logger->addInfo("inflate $cacheFilenameHeader and $cacheFilenameContent AND respond request");
+        $isHeader = true;
+        $fd = fopen($cacheFilenameHeader, 'w');
+        while(!feof($fp)) {
+            $str = fgets($fp, 4096);
+            if (false === $str) {
+                $logger->addError("fgets returned false");
+                break;
+            } else {
+                if ($isHeader && "\r\n" == $str) {
+                    $isHeader = false;
+                    fclose($fd);
+                    $fd = fopen($cacheFilenameContent, 'w');
+                } else {
+                    if ($isHeader) {
+                        if (stripos($str, 'Location: ') !== false) {
+                            $url = preg_replace('/location: /i', '', $str);
+                            $url = preg_replace(
+                                array("/\n/", "/\r/"), 
+                                array('', ''),
+                                $url
+                            );
+                            fclose($fd);
+                            fclose($fp);
+                            return saveUrl($url, $youtubeId);
+                        }
+                        $logger->info("header to be cached: " . $str);
+                        header($str);
+                    } else {
+                        echo $str;
+                    }
+                    fwrite($fd, $str);
+                }
+            }
+        }
+        fclose($fd);
+        fclose($fp);
+    }
+}
+
 // Wait while another process handle this request.
 while (file_exists($cacheFilenamePID)) {
     $pid = file_get_contents($cacheFilenamePID);
@@ -114,47 +172,7 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
         $logger->addInfo("command returned error. respond user request with 404");
         header("HTTP/1.0 404 Not Found");
     } else {
-        $url = parse_url($output[0]);
-        $host = 'ssl://' . $url['host'];
-        $uri = $url['path'] . '?' . $url['query'];
-        $logger->addInfo("Open connection with $host on port 443");
-
-        $fp = fsockopen($host, 443);
-        if ($fp) {
-            socket_set_option($fp, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
-            socket_set_option($fp, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 10, 'usec' => 0));
-            $out = "GET $uri HTTP/1.1\r\n";
-            $out .= "Host: " . $url['host'] . "\r\n";
-            $out .= "Connection: Close\r\n\r\n";
-            $logger->addInfo("send header: $out");
-            fwrite($fp, $out);
-            
-            $logger->addInfo("inflate $cacheFilenameHeader and $cacheFilenameContent AND respond request");
-            $isHeader = true;
-            $fd = fopen($cacheFilenameHeader, 'w');
-            while(!feof($fp)) {
-                $str = fgets($fp, 4096);
-                if (false === $str) {
-                    $logger->addError("fgets returned false");
-                    break;
-                } else {
-                    if ($isHeader && "\r\n" == $str) {
-                        $isHeader = false;
-                        fclose($fd);
-                        $fd = fopen($cacheFilenameContent, 'w');
-                    } else {
-                        if ($isHeader) {
-                            header($str);
-                        } else {
-                            echo $str;
-                        }
-                        fwrite($fd, $str);
-                    }
-                }
-            }
-            fclose($fd);
-            fclose($fp);
-        }
+        saveUrl($output[0]);
     }
 
     // delete PID file.
