@@ -3,6 +3,7 @@
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../'); // as a composer component
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../'); // inside /public/api
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../'); // inside /public
+set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__); // inside ./
 
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../application/configs/'); // as a composer component
 
@@ -11,7 +12,6 @@ include_once 'vendor/autoload.php';
 use Monolog\Logger;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Processor\ProcessIdProcessor;
-
 
 ignore_user_abort(true);
 $conf = include('you2better-conf.php');
@@ -80,9 +80,7 @@ function saveUrl($url)
     $logger->addInfo("Open connection with $host on port 443");
 
     $fp = fsockopen($host, 443);
-    if ($fp) {
-        socket_set_option($fp, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
-        socket_set_option($fp, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 10, 'usec' => 0));
+    if (false !== $fp) {
         $out = "GET $uri HTTP/1.1\r\n";
         $out .= "Host: " . $url['host'] . "\r\n";
         $out .= "Connection: Close\r\n\r\n";
