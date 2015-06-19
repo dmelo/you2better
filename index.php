@@ -142,6 +142,10 @@ while (file_exists($cacheFilenamePID)) {
     }
 }
 
+if (isset($_SERVER['HTTP_RANGE'])) {
+    $logger->info('HTTP_RANGE: ' . print_r($_SERVER['HTTP_RANGE'], true));
+}
+
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
     $logger->addInfo("request for $youtubeId is cached. just output cached file");
     
