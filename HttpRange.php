@@ -6,7 +6,7 @@ class HttpRange {
     static private $_currentByte = 0;
     static private $_range = null;
 
-    static public function echoData($data)
+    static public function echoData($data, $logger)
     {
         global $_SERVER;
         $range = null;
@@ -24,6 +24,9 @@ class HttpRange {
         }
 
         // var_dump($range);
+        $start = 0;
+        $length = 0;
+
         if (null !== $range) {
             $start = $range[0] < self::$_currentByte ? 0 : $range[0] - self::$_currentByte;
             $length = $range[1] - $start + 1;
@@ -36,5 +39,8 @@ class HttpRange {
             // echo "bad" . PHP_EOL;
             echo $data;
         }
+
+        $logger->err('datasize: ' . strlen($data) . '. range: ' . print_r($range, true) . '. start: ' . $start . '. length: ' . $length . '. HTTP_RANGE: ' . (isset($_SERVER['HTTP_RANGE']) ? $_SERVER['HTTP_RANGE'] : 'HTTP_RANGE NOT SET'));
+        flush();
     }
 }

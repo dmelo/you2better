@@ -113,11 +113,19 @@ function saveUrl($url)
                             fclose($fd);
                             fclose($fp);
                             return saveUrl($url, $youtubeId);
+                        } elseif (
+                            stripos($str, 'HTTP/1.1') !== false ||
+                            stripos($str, 'Content-Type') !== false ||
+                            stripos($str, 'Content-Length') !== false ||
+                            stripos($str, 'Accept-Ranges') !== false ||
+                            stripos($str, 'Connection: close') !== false
+                        ) {
+
+                            $logger->info("header to be cached: " . $str);
+                            header($str);
                         }
-                        $logger->info("header to be cached: " . $str);
-                        header($str);
                     } else {
-                        HttpRange::echoData($str);
+                        HttpRange::echoData($str, $logger);
                     }
                     fwrite($fd, $str);
                 }
@@ -150,15 +158,14 @@ if (isset($_SERVER['HTTP_RANGE'])) {
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
     $logger->addInfo("request for $youtubeId is cached. just output cached file");
     
-    // write header.
-    $fd = fopen($cacheFilenameHeader, 'r');
-    while (!feof($fd)) {
-        header(fgets($fd, 4096));
-    }
-    fclose($fd);
+    header('HTTP/1.1 200 OK');
+    header('Content-Type: audio/mp4');
+    header('Content-Length: ' . filesize($cacheFilenameContent));
+    header('Accept-Ranges: bytes');
+    header('Connection: close');
 
     // write content.
-    HttpRange::echoData(file_get_contents($cacheFilenameContent));
+    HttpRange::echoData(file_get_contents($cacheFilenameContent), $logger);
 } else {
     $logger->addInfo("there is no cache for $youtubeId and no process handling it already");
 
