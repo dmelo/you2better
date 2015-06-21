@@ -8,6 +8,7 @@ set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__); // inside ./
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../application/configs/'); // as a composer component
 
 include_once 'vendor/autoload.php';
+include_once 'HttpRange.php';
 
 use Monolog\Logger;
 use Monolog\Handler\RotatingFileHandler;
@@ -116,7 +117,7 @@ function saveUrl($url)
                         $logger->info("header to be cached: " . $str);
                         header($str);
                     } else {
-                        echo $str;
+                        HttpRange::echoData($str);
                     }
                     fwrite($fd, $str);
                 }
@@ -157,7 +158,7 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
     fclose($fd);
 
     // write content.
-    echo file_get_contents($cacheFilenameContent);
+    HttpRange::echoData(file_get_contents($cacheFilenameContent));
 } else {
     $logger->addInfo("there is no cache for $youtubeId and no process handling it already");
 
