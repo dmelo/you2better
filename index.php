@@ -15,6 +15,8 @@ use Monolog\Handler\RotatingFileHandler;
 use Monolog\Processor\ProcessIdProcessor;
 
 ignore_user_abort(true);
+
+// logger
 $conf = include('you2better-conf.php');
 $logger = new Logger('default');
 $logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/you2better.log', 0, Logger::INFO));
@@ -23,6 +25,12 @@ $logger->pushProcessor(new ProcessIdProcessor);
 $logger->addInfo("Start");
 $logger->addInfo("Request headers: " . print_r(getallheaders(), true));
 
+/**
+ * Check if size informed on header matches the cached file size.
+ *
+ * @param $cacheFilenameHeader file name of the header file.
+ * @param $cacheFilenameContent file name of the content file.
+ */
 function checkFileSize($cacheFilenameHeader, $cacheFilenameContent)
 {
     global $logger;
@@ -66,12 +74,18 @@ $logger->addInfo('contentType: ' . $contentType);
 $ysite = 'http://www.youtube.com/watch';
 $ydl = $conf['ydl'];
 
+// Calculate cacheFilename[Header|Content|PID]
 $cacheFilename = realpath(__DIR__ . '/cache/');
 $filenameBase = "$cacheFilename/$youtubeId.$ext";
 $cacheFilenameHeader = "$filenameBase.header";
 $cacheFilenameContent = "$filenameBase.content";
 $cacheFilenamePID = "$filenameBase.pid";
 
+/**
+ * Download content from given URL, serves the content and store on cache files.
+ *
+ * @param $url URL of the content
+ */
 function saveUrl($url)
 {
     global $logger, $youtubeId, $cacheFilenameHeader, $cacheFilenameContent;
@@ -80,11 +94,12 @@ function saveUrl($url)
     $uri = $url['path'] . '?' . $url['query'];
     $logger->addInfo("Open connection with $host on port 443");
 
-    $fp = fsockopen($host, 443);
+    $fp = fsockopen($host, 443, $errno, $errstr);
+    $logger->addInfo("fsockopen. host: $host. errno: $errno. errstr: $errstr");
     if (false !== $fp) {
         $out = "GET $uri HTTP/1.1\r\n";
         $out .= "Host: " . $url['host'] . "\r\n";
-        $out .= "Connection: Close\r\n\r\n";
+        $out .= "Connection: keep-alive\r\n\r\n";
         $logger->addInfo("send header: $out");
         fwrite($fp, $out);
         
@@ -117,15 +132,17 @@ function saveUrl($url)
                             stripos($str, 'HTTP/1.1') !== false ||
                             stripos($str, 'Content-Type') !== false ||
                             stripos($str, 'Content-Length') !== false ||
-                            stripos($str, 'Accept-Ranges') !== false ||
-                            stripos($str, 'Connection: close') !== false
+                            stripos($str, 'Accept-Ranges') !== false
                         ) {
 
                             $logger->info("header to be cached: " . $str);
                             header($str);
+                        } elseif (stripos($str, 'Connection:') !== false) {
+                            header('Connection: keep-alive');
                         }
                     } else {
-                        HttpRange::echoData($str, $logger);
+                        // TODO: fix second parameter.
+                        HttpRange::echoData($str, 2, $logger);
                     }
                     fwrite($fd, $str);
                 }
@@ -151,21 +168,33 @@ while (file_exists($cacheFilenamePID)) {
     }
 }
 
-if (isset($_SERVER['HTTP_RANGE'])) {
-    $logger->info('HTTP_RANGE: ' . print_r($_SERVER['HTTP_RANGE'], true));
-}
-
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
     $logger->addInfo("request for $youtubeId is cached. just output cached file");
-    
-    header('HTTP/1.1 200 OK');
-    header('Content-Type: audio/mp4');
-    header('Content-Length: ' . filesize($cacheFilenameContent));
+    $etag = md5($cacheFilenameContent);
+    $range = HttpRange::getRange(filesize($cacheFilenameContent), $logger);
+
+    if (null === $range || (isset($_SERVER['If-Range']) && $md5 != $_SERVER['If-Range'])) {
+        $full = true;
+        header('HTTP/1.1 200 OK');
+    } else {
+        $full = false;
+        header('HTTP/1.1 206 Partial Content');
+    }
+
+    header('Last-Modified: ' . date('r', stat($cacheFilenameContent)['mtime']));
+    header('ETag: ' . md5($cacheFilenameContent));
     header('Accept-Ranges: bytes');
-    header('Connection: close');
+    header('Content-Length: ' . ($full ? filesize($cacheFilenameContent) : $range['Content-Length']));
+    if (!$full) {
+        header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . filesize($cacheFilenameContent));
+    }
+    $logger->err('getRange ' . print_r($range, true));
+    $logger->err('_SERVER: ' . print_r($_SERVER, true));
+    header('Connection: keep-alive');
+    header('Content-Type: audio/mp4');
 
     // write content.
-    HttpRange::echoData(file_get_contents($cacheFilenameContent), $logger);
+    HttpRange::echoData(file_get_contents($cacheFilenameContent), filesize($cacheFilenameContent), $logger);
 } else {
     $logger->addInfo("there is no cache for $youtubeId and no process handling it already");
 

@@ -1,7 +1,6 @@
 <VirtualHost *:80>
     ServerAdmin dmelo87@gmail.com
     DocumentRoot /home/dmelo/proj2/you2better
-    HostnameLookups Off
     ServerName you2better.localhost
     SetEnv APPLICATION_ENV development
     php_admin_value date.timezone "America/Sao_Paulo"
