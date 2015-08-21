@@ -47,4 +47,17 @@ class HttpRange {
 
         return self::$_range;
     }
+
+    static public function isFullRequest($length, $etag = null)
+    {
+        $status = '';
+        $range = HttpRange::getRange($length);
+        if (null === $range || (isset($_SERVER['If-Range']) && $etag != $_SERVER['If-Range'])) {
+            $isFull = true;
+        } else {
+            $isFull = false;
+        }
+
+        return $isFull;
+    }
 }

@@ -4,7 +4,6 @@ set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../'); 
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../'); // inside /public/api
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../'); // inside /public
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__); // inside ./
-
 set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__ . '/../../../application/configs/'); // as a composer component
 
 include_once 'vendor/autoload.php';
@@ -95,6 +94,7 @@ function saveUrl($url)
     $logger->addInfo("Open connection with $host on port 443");
 
     $fp = fsockopen($host, 443, $errno, $errstr);
+
     $logger->addInfo("fsockopen. host: $host. errno: $errno. errstr: $errstr");
     if (false !== $fp) {
         $out = "GET $uri HTTP/1.1\r\n";
@@ -102,6 +102,7 @@ function saveUrl($url)
         $out .= "Connection: keep-alive\r\n\r\n";
         $logger->addInfo("send header: $out");
         fwrite($fp, $out);
+        $length = 0;
         
         $logger->addInfo("inflate $cacheFilenameHeader and $cacheFilenameContent AND respond request");
         $isHeader = true;
@@ -115,6 +116,23 @@ function saveUrl($url)
                 if ($isHeader && "\r\n" == $str) {
                     $isHeader = false;
                     fclose($fd);
+                    $full = HttpRange::isFullRequest($length);
+                    $range = HttpRange::getRange($length);
+                    header(
+                         $full ?
+                        'HTTP/1.1 200 OK' :
+                        'HTTP/1.1 206 Partial Content'
+                    );
+                    $lastModified = date('r', file_exists($cacheFilenameContent) ? stat($cacheFilenameContent)['mtime'] : time());
+                    header('Last-Modified: ' . $lastModified);
+                    header('Accept-Ranges: bytes');
+                    header('Content-Length: ' . ($full ? $length : $range['Content-Length']));
+                    if (!$full) {
+                        header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . $length);
+                    }
+                    header('Connection: keep-alive');
+                    header('Content-Type: audio:mp4');
+
                     $fd = fopen($cacheFilenameContent, 'w');
                 } else {
                     if ($isHeader) {
@@ -128,21 +146,14 @@ function saveUrl($url)
                             fclose($fd);
                             fclose($fp);
                             return saveUrl($url, $youtubeId);
-                        } elseif (
-                            stripos($str, 'HTTP/1.1') !== false ||
-                            stripos($str, 'Content-Type') !== false ||
-                            stripos($str, 'Content-Length') !== false ||
-                            stripos($str, 'Accept-Ranges') !== false
-                        ) {
-
-                            $logger->info("header to be cached: " . $str);
-                            header($str);
-                        } elseif (stripos($str, 'Connection:') !== false) {
-                            header('Connection: keep-alive');
+                        } elseif (stripos($str, 'Content-Length') !== false) {
+                            $length = (int) preg_replace(
+                                '/Content-Length: */i', '', $str
+                            );
                         }
                     } else {
                         // TODO: fix second parameter.
-                        HttpRange::echoData($str, 2, $logger);
+                        HttpRange::echoData($str, $length, $logger);
                     }
                     fwrite($fd, $str);
                 }
@@ -171,15 +182,14 @@ while (file_exists($cacheFilenamePID)) {
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
     $logger->addInfo("request for $youtubeId is cached. just output cached file");
     $etag = md5($cacheFilenameContent);
-    $range = HttpRange::getRange(filesize($cacheFilenameContent), $logger);
+    $range = HttpRange::getRange(filesize($cacheFilenameContent));
 
-    if (null === $range || (isset($_SERVER['If-Range']) && $md5 != $_SERVER['If-Range'])) {
-        $full = true;
-        header('HTTP/1.1 200 OK');
-    } else {
-        $full = false;
-        header('HTTP/1.1 206 Partial Content');
-    }
+    $full = HttpRange::isFullRequest(filesize($cacheFilenameContent), $etag);
+    header(
+         $full ?
+        'HTTP/1.1 200 OK' :
+        'HTTP/1.1 206 Partial Content'
+    );
 
     header('Last-Modified: ' . date('r', stat($cacheFilenameContent)['mtime']));
     header('ETag: ' . md5($cacheFilenameContent));
