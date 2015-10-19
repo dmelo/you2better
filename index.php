@@ -173,6 +173,13 @@ while (file_exists($cacheFilenamePID)) {
     if (!file_exists("/proc/$pid")) {
         $logger->addInfo("process $pid is not running, removing lock file");
         unlink($cacheFilenamePID);
+    } elseif (time() - stat("/proc/$pid")['ctime'] > 300) {
+        $logger->addInfo("waited for too long... time to kill the fucker $pid. Pew pew pew!!");
+        if(posix_kill($pid, 9)) {
+            $logger->addInfo("It seems like it worked");
+        } else {
+            $logger->addInfo("Error could not kill $pid");
+        }
     } else {
         $logger->addInfo("wait another second for $pid");
         sleep(1);
