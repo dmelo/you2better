@@ -88,6 +88,7 @@ $cacheFilenamePID = "$filenameBase.pid";
 function saveUrl($url)
 {
     global $logger, $youtubeId, $cacheFilenameHeader, $cacheFilenameContent;
+    $logger->addInfo("saving url: $url");
     $url = parse_url($url);
     $host = 'ssl://' . $url['host'];
     $uri = $url['path'] . '?' . $url['query'];
@@ -213,7 +214,7 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
     file_put_contents($cacheFilenamePID, getmypid());
 
     $tmpFile = "/tmp/{$youtubeId}";
-    $cmd = "$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpFile} ; cat {$tmpFile} | grep \"audio/mp4\" || cat {$tmpFile}"; 
+    $cmd = "$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpFile} ; cat {$tmpFile} | grep \"mime=audio\" || cat {$tmpFile}";
     $logger->addInfo("run command: $cmd");
     exec("$cmd", $output, $ret);
     $logger->addInfo("command output: $cmd. ret: $ret");
