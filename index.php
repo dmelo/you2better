@@ -61,7 +61,7 @@ function checkFileSize($cacheFilenameHeader, $cacheFilenameContent)
 
 // Decide content-type
 $youtubeId = $_GET['youtubeid'];
-$ext = $_GET['ext'];
+$ext = isset ($_GET['ext']) ? $_GET['ext'] : 'm4a';
 if ('mp4' === $ext || 'm4v' === $ext) {
     $contentType = 'video/mp4';
 } elseif ('m4a' === $ext) {
