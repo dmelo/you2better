@@ -1,6 +1,7 @@
 #!/bin/bash
 
-dnf install -y make \
+dnf install -y git \
+    make \
     pandoc \
     php \
     python \
