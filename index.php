@@ -15,8 +15,15 @@ use Monolog\Processor\ProcessIdProcessor;
 
 ignore_user_abort(true);
 
-// logger
+// config
 $conf = include('you2better-conf.php');
+
+// datetime
+if (isset($conf['timezone'])) {
+    date_default_timezone_set($conf['timezone']);
+}
+
+// logger
 $logger = new Logger('default');
 $logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/you2better.log', 0, Logger::INFO));
 $logger->pushProcessor(new ProcessIdProcessor);

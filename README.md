@@ -3,10 +3,21 @@ You2Better
 
 A server that povides a easy way to download/stream YouTube audio files.
 
+Dependencies
+------------
+
+List of software that must be previously installed:
+
+- make
+- pandoc
+- php
+- python 2.6, 2.7, or 3.2+
+- zip
+
 Install
 -------
 
-You will need [composer](https://getcomposer.org/), and Python 2.6, 2.7, or 3.2+
+Use the following commands to setup You2Better.
 
 ```bash
 git clone https://github.com/dmelo/you2better.git
