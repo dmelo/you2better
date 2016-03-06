@@ -1,7 +1,7 @@
 You2Better
 ==========
 
-A server that povides a easy way to download/stream YouTube audio files.
+A Web server that provides a easy way to download/stream YouTube audio files.
 
 Dependencies
 ------------
@@ -37,3 +37,11 @@ Try to download an audio:
 wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
 ```
 
+Docker
+------
+
+You can build a fully functional Docker image.
+
+```bash
+docker build .
+```
