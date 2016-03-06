@@ -40,8 +40,16 @@ wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4
 Docker
 ------
 
-You can build a fully functional Docker image.
+You can run the images from Docker Hub
+[dmelo/you2better](https://hub.docker.com/r/dmelo/you2better/).
 
 ```bash
-docker build .
+docker run -p 8888:8888 dmelo/you2better
+```
+
+As described on the Install section, download the content using port 8888 of
+localhost:
+
+```bash
+wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
 ```
