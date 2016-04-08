@@ -4,3 +4,4 @@ services:
 script:
     - docker run -p 8888:8888 dmelo/you2better
     - wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
+
