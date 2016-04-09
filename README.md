@@ -1,6 +1,8 @@
 You2Better
 ==========
 
+[![Build Status](https://travis-ci.org/dmelo/you2better.svg)](https://travis-ci.org/dmelo/you2better)
+
 A Web server that provides a easy way to download/stream YouTube audio files.
 
 Dependencies
