@@ -1,0 +1,11 @@
+sudo: required
+
+services:
+    - docker
+
+before_install:
+    - docker build -t you2better .
+    - docker run -d -p 8888:8888 you2better
+
+script:
+    - wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
