@@ -8,6 +8,7 @@ Dependencies
 
 List of software that must be previously installed:
 
+- git
 - make
 - pandoc
 - php
