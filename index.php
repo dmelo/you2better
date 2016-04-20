@@ -28,8 +28,8 @@ $logger = new Logger('default');
 $logger->pushHandler(new RotatingFileHandler($conf['logpath'] . '/you2better.log', 0, Logger::INFO));
 $logger->pushProcessor(new ProcessIdProcessor);
 
-$logger->addInfo("Start");
-$logger->addInfo("Request headers: " . print_r(getallheaders(), true));
+$logger->info("Start");
+$logger->info("Request headers: " . print_r(getallheaders(), true));
 
 /**
  * Check if size informed on header matches the cached file size.
@@ -75,7 +75,7 @@ if ('mp4' === $ext || 'm4v' === $ext) {
     $contentType = 'audio/mp4';
 }
 
-$logger->addInfo('contentType: ' . $contentType);
+$logger->info('contentType: ' . $contentType);
 
 $ysite = 'http://www.youtube.com/watch';
 $ydl = $conf['ydl'];
@@ -95,24 +95,24 @@ $cacheFilenamePID = "$filenameBase.pid";
 function saveUrl($url)
 {
     global $logger, $youtubeId, $cacheFilenameHeader, $cacheFilenameContent;
-    $logger->addInfo("saving url: $url");
+    $logger->info("saving url: $url");
     $url = parse_url($url);
     $host = 'ssl://' . $url['host'];
     $uri = $url['path'] . '?' . $url['query'];
-    $logger->addInfo("Open connection with $host on port 443");
+    $logger->info("Open connection with $host on port 443");
 
     $fp = fsockopen($host, 443, $errno, $errstr);
 
-    $logger->addInfo("fsockopen. host: $host. errno: $errno. errstr: $errstr");
+    $logger->info("fsockopen. host: $host. errno: $errno. errstr: $errstr");
     if (false !== $fp) {
         $out = "GET $uri HTTP/1.1\r\n";
         $out .= "Host: " . $url['host'] . "\r\n";
         $out .= "Connection: keep-alive\r\n\r\n";
-        $logger->addInfo("send header: $out");
+        $logger->info("send header: $out");
         fwrite($fp, $out);
         $length = 0;
         
-        $logger->addInfo("inflate $cacheFilenameHeader and $cacheFilenameContent AND respond request");
+        $logger->info("inflate $cacheFilenameHeader and $cacheFilenameContent AND respond request");
         $isHeader = true;
         $fd = fopen($cacheFilenameHeader, 'w');
         while(!feof($fp)) {
@@ -172,30 +172,35 @@ function saveUrl($url)
     }
 }
 
+function pageNotFound()
+{
+    header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found"); 
+}
+
 // Wait while another process handle this request.
 while (file_exists($cacheFilenamePID)) {
     $pid = file_get_contents($cacheFilenamePID);
-    $logger->addInfo("another process ($pid) is locking this request");
+    $logger->info("another process ($pid) is locking this request");
 
     // If pid doesn't exists, remove the file and continue.
     if (!file_exists("/proc/$pid")) {
-        $logger->addInfo("process $pid is not running, removing lock file");
+        $logger->info("process $pid is not running, removing lock file");
         unlink($cacheFilenamePID);
     } elseif (time() - stat("/proc/$pid")['ctime'] > 300) {
-        $logger->addInfo("waited for too long... time to kill the fucker $pid. Pew pew pew!!");
+        $logger->info("waited for too long... time to kill the fucker $pid. Pew pew pew!!");
         if(posix_kill($pid, 9)) {
-            $logger->addInfo("It seems like it worked");
+            $logger->info("It seems like it worked");
         } else {
-            $logger->addInfo("Error could not kill $pid");
+            $logger->info("Error could not kill $pid");
         }
     } else {
-        $logger->addInfo("wait another second for $pid");
+        $logger->info("wait another second for $pid");
         sleep(1);
     }
 }
 
 if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && checkFileSize($cacheFilenameHeader, $cacheFilenameContent)) {
-    $logger->addInfo("request for $youtubeId is cached. just output cached file");
+    $logger->info("request for $youtubeId is cached. just output cached file");
     $etag = md5($cacheFilenameContent);
     $range = HttpRange::getRange(filesize($cacheFilenameContent));
 
@@ -221,25 +226,29 @@ if (file_exists($cacheFilenameHeader) && file_exists($cacheFilenameContent) && c
     // write content.
     HttpRange::echoData(file_get_contents($cacheFilenameContent), filesize($cacheFilenameContent), $logger);
 } else {
-    $logger->addInfo("there is no cache for $youtubeId and no process handling it already");
+    $logger->info("there is no cache for $youtubeId and no process handling it already");
 
     // create PID file.
-    $logger->addInfo("create PID file $cacheFilenamePID");
+    $logger->info("create PID file $cacheFilenamePID");
     file_put_contents($cacheFilenamePID, getmypid());
 
     $tmpFile = "/tmp/{$youtubeId}";
     $cmd = "$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpFile} ; cat {$tmpFile} | grep \"mime=audio\" || cat {$tmpFile}";
-    $logger->addInfo("run command: $cmd");
+    $logger->info("run command: $cmd");
     exec("$cmd", $output, $ret);
-    $logger->addInfo("command output: $cmd. ret: $ret");
+    $logger->info("command: $cmd. ret: $ret. output: " . print_r($output, true));
     if (0 != $ret) {
-        $logger->addInfo("command returned error. respond user request with 404");
+        $logger->info("command returned error. respond user request with 404");
         header("HTTP/1.0 404 Not Found");
     } else {
-        saveUrl($output[0]);
+        if (isset($output[0])) {
+            saveUrl($output[0]);
+        } else {
+            pageNotFound();
+        }
     }
 
     // delete PID file.
-    $logger->addInfo("delete PID file $cacheFilenamePID");
+    $logger->info("delete PID file $cacheFilenamePID");
     unlink($cacheFilenamePID);
 }
