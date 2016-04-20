@@ -1,7 +1,7 @@
 You2Better
 ==========
 
-A server that povides a easy way to download/stream YouTube audio files.
+A Web server that provides a easy way to download/stream YouTube audio files.
 
 Dependencies
 ------------
@@ -38,3 +38,19 @@ Try to download an audio:
 wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
 ```
 
+Docker
+------
+
+You can run the images from Docker Hub
+[dmelo/you2better](https://hub.docker.com/r/dmelo/you2better/).
+
+```bash
+docker run -p 8888:8888 dmelo/you2better
+```
+
+As described on the Install section, download the content using port 8888 of
+localhost:
+
+```bash
+wget http://localhost:8888/?youtubeid=meT2eqgDjiM -O PomplamooseMusic_Beat_it.m4a
+```
