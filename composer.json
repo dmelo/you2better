@@ -7,6 +7,9 @@
         "monolog/monolog": "^1.19",
         "rg3/youtube-dl": ">=2016.03.01"
     },
+    "autoload": {
+        "psr-4": {"DMelo\\YouBetter\\": "src/YouBetter"}
+    },
     "repositories": [
         {
             "type": "package",

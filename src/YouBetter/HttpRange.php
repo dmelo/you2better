@@ -1,5 +1,7 @@
 <?php
 
+namespace DMelo\YouBetter;
+
 define('INF_MAX', 1024 * 1024 * 1024 * 1024);
 
 class HttpRange {
@@ -24,12 +26,14 @@ class HttpRange {
             echo $data;
         }
 
+        /*
         $logger->err(
             'datasize: ' . sprintf("%5d", strlen($data)) . '. range: ' .
             print_r($range, true) . '. start: ' . sprintf("%7d", $start) .
             '. length: ' . sprintf("%5d", $length) . '. HTTP_RANGE: ' .
             (isset($_SERVER['HTTP_RANGE']) ? $_SERVER['HTTP_RANGE'] : 'HTTP_RANGE NOT SET')
         );
+        */
         flush();
     }
 
