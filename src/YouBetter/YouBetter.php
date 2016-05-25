@@ -285,16 +285,36 @@ class YouBetter
             header('ETag: ' . md5($this->cacheFilenameContent));
             header('Accept-Ranges: bytes');
             header('Content-Length: ' . ($full ? filesize($this->cacheFilenameContent) : $range['Content-Length']));
-            if (!$full) {
-                header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . filesize($this->cacheFilenameContent));
-            }
+
+            $this->logger->err('contentFile: ' . $this->cacheFilenameContent);
             $this->logger->err('getRange ' . print_r($range, true));
             $this->logger->err('_SERVER: ' . print_r($_SERVER, true));
             header('Connection: keep-alive');
             header('Content-Type: audio/mp4');
 
+            if (!$full) {
+                header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . filesize($this->cacheFilenameContent));
+            }
+            $this->logger->debug('contentFile: ' . $this->cacheFilenameContent);
+            $this->logger->debug('getRange ' . print_r($range, true));
+            $this->logger->debug('_SERVER: ' . print_r($_SERVER, true));
+            header('Connection: keep-alive');
+            header('Content-Type: audio/mp4');
+
             // write content.
-            HttpRange::echoData(file_get_contents($this->cacheFilenameContent), filesize($this->cacheFilenameContent), $this->logger);
+            if (false !== ($fd = fopen($this->cacheFilenameContent, 'r'))) {
+                $totalLength = filesize($this->cacheFilenameContent);
+                while (!feof($fd)) {
+                    $str = fread($fd, 1024 * 1024);
+                    HttpRange::echoData($str, $totalLength, $this->logger);
+                }
+            } else {
+                $this->logger->err(
+                    "Could not open file " . $this->cacheFilenameContent .
+                    " for reading"
+                );
+            }
+
         } else { // Or get from Youtube and cache it
             $this->logger->info("there is no cache for $youtubeId and no process handling it already");
 

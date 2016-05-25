@@ -2,6 +2,8 @@ You2Better
 ==========
 
 [![Build Status](https://travis-ci.org/dmelo/you2better.svg)](https://travis-ci.org/dmelo/you2better)
+[![Code Climate](https://codeclimate.com/github/dmelo/you2better/badges/gpa.svg)](https://codeclimate.com/github/dmelo/you2better)
+[![Issue Count](https://codeclimate.com/github/dmelo/you2better/badges/issue_count.svg)](https://codeclimate.com/github/dmelo/you2better)
 
 A Web server that provides a easy way to download/stream YouTube audio files.
 
