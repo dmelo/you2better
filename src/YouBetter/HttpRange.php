@@ -18,22 +18,20 @@ class HttpRange {
         if (null !== $range) {
             $start = $range[0] < self::$_currentByte ? 0 : $range[0] - self::$_currentByte;
             $length = $range[1] - $start + 1;
-            $length = $start + $length > strlen($data) ? strlen($data) - $start : $length;
-            $length = $length < 0 ? 0 : $length;
+            $length = $start + $length > strlen($data) ? strlen($data) : $length;
+            $logger->debug("strlen(data): " . strlen($data) . ". start: " . $start . ". length: " . $length);
             echo substr($data, $start, $length);
             self::$_currentByte += $length;
         } else {
             echo $data;
         }
 
-        /*
-        $logger->err(
+        $logger->debug(
             'datasize: ' . sprintf("%5d", strlen($data)) . '. range: ' .
             print_r($range, true) . '. start: ' . sprintf("%7d", $start) .
             '. length: ' . sprintf("%5d", $length) . '. HTTP_RANGE: ' .
             (isset($_SERVER['HTTP_RANGE']) ? $_SERVER['HTTP_RANGE'] : 'HTTP_RANGE NOT SET')
         );
-        */
         flush();
     }
 

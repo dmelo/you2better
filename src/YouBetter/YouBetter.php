@@ -160,7 +160,7 @@ class YouBetter
                 $full = HttpRange::isFullRequest($length);
                 $range = HttpRange::getRange($length);
                 $this->processHeader($full, $range, $length);
-                $fd = fopen($tmpCacheFilenameContent, 'w');
+                $fd = fopen($tmpCacheFilenameContent, 'wb');
             } else {
                 if ($isHeader) {
                     if (stripos($str, 'Location: ') !== false) {
@@ -286,26 +286,24 @@ class YouBetter
             header('Accept-Ranges: bytes');
             header('Content-Length: ' . ($full ? filesize($this->cacheFilenameContent) : $range['Content-Length']));
 
-            $this->logger->err('contentFile: ' . $this->cacheFilenameContent);
-            $this->logger->err('getRange ' . print_r($range, true));
-            $this->logger->err('_SERVER: ' . print_r($_SERVER, true));
-            header('Connection: keep-alive');
-            header('Content-Type: audio/mp4');
-
-            if (!$full) {
-                header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . filesize($this->cacheFilenameContent));
-            }
             $this->logger->debug('contentFile: ' . $this->cacheFilenameContent);
             $this->logger->debug('getRange ' . print_r($range, true));
             $this->logger->debug('_SERVER: ' . print_r($_SERVER, true));
             header('Connection: keep-alive');
             header('Content-Type: audio/mp4');
 
+            $this->logger->debug("full ? " . ($full ? 'true' : 'false'));
+            if (!$full) {
+                header('Content-Range:bytes ' . $range[0] . '-' . $range[1] . '/' . filesize($this->cacheFilenameContent));
+            }
+
             // write content.
-            if (false !== ($fd = fopen($this->cacheFilenameContent, 'r'))) {
+            if (false !== ($fd = fopen($this->cacheFilenameContent, 'rb'))) {
                 $totalLength = filesize($this->cacheFilenameContent);
+                $this->logger->debug("totalLength: " . $totalLength);
                 while (!feof($fd)) {
                     $str = fread($fd, 1024 * 1024);
+                    $this->logger->debug("strlen(str): " . strlen($str));
                     HttpRange::echoData($str, $totalLength, $this->logger);
                 }
             } else {
