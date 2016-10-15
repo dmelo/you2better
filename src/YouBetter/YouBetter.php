@@ -318,25 +318,21 @@ class YouBetter
 
 
             $ydlFile = "/tmp/{$youtubeId}";
-            if (file_exists($ydlFile)) {
-                $this->saveUrl(file_get_contents($ydlFile));
-            } else {
-                $tmpYdlFile = $ydlFile . "." . rand();
+            $tmpYdlFile = $ydlFile . "." . rand();
 
-                $cmd = "$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpYdlFile} ; " .
-                    "cat {$tmpYdlFile} | grep \"mime=audio\" || cat {$tmpYdlFile}";
-                $this->logger->info("run command: $cmd");
-                exec("$cmd", $output, $ret);
-                unlink($tmpYdlFile);
-                $this->logger->info("command: $cmd. ret: $ret. output: " . print_r($output, true));
-                if (0 === $ret && isset($output[0])) {
-                    $this->saveUrl($output[0]);
-                    file_put_contents($ydlFile, $output[0], LOCK_EX);
-                    file_exists($tmpYdlFile) && unlink($tmpYdlFile);
-                } else {
-                    $this->logger->err("something wrong with cmd. return 404");
-                    $this->pageNotFound();
-                }
+            $cmd = "$ydl -g \"{$ysite}?v={$youtubeId}\" > {$tmpYdlFile} ; " .
+                "cat {$tmpYdlFile} | grep \"mime=audio\" || cat {$tmpYdlFile}";
+            $this->logger->info("run command: $cmd");
+            exec("$cmd", $output, $ret);
+            unlink($tmpYdlFile);
+            $this->logger->info("command: $cmd. ret: $ret. output: " . print_r($output, true));
+            if (0 === $ret && isset($output[0])) {
+                $this->saveUrl($output[0]);
+                file_put_contents($ydlFile, $output[0], LOCK_EX);
+                file_exists($tmpYdlFile) && unlink($tmpYdlFile);
+            } else {
+                $this->logger->err("something wrong with cmd. return 404");
+                $this->pageNotFound();
             }
         }
     }
